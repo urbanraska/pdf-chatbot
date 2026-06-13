@@ -1,6 +1,6 @@
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_ollama import OllamaLLM
 from langchain_community.vectorstores import Chroma
+from app.services.hf_llm import generate_answer
 
 vector_db = None
 
@@ -8,7 +8,7 @@ def create_vector_store(chunks):
     global vector_db
 
     embeddings = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2"
+        model_name="BAAI/bge-small-en-v1.5"
     )
 
     vector_db = Chroma.from_documents(
@@ -28,21 +28,26 @@ def get_answer(query: str):
 
     context = "\n".join([doc.page_content for doc in docs])
 
-    llm = OllamaLLM(
-    model="phi3",
-    num_predict=200
-    )
 
     prompt = f"""
-    Answer ONLY using the context below:
+    You are a PDF assistant.
 
+    Use ONLY the provided context.
+
+    If the answer is not present in the context,
+    reply with:
+
+    "I could not find this information in the uploaded PDF."
+
+    Context:
     {context}
 
-    Question: {query}
+    Question:
+    {query}
+
+    Answer:
     """
 
-    response = llm.invoke(prompt)
-
-    answer = response
+    answer = generate_answer(prompt)
 
     return answer
